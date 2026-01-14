@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة ومراقبة وتحسين أداء نظام التشغيل</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --gray: #7f8c8d;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* شاشة التحميل */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1a1a2e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.5s;
+        }
+
+        .loader {
+            text-align: center;
+        }
+
+        .loader i {
+            font-size: 4rem;
+            color: #3498db;
+            margin-bottom: 20px;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* الشاشة الرئيسية */
+        .main-screen {
+            display: none;
+        }
+
+        .main-screen.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* العنوان */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px;
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.2), rgba(41, 128, 185, 0.2));
+            border-radius: 20px;
+            border: 1px solid rgba(52, 152, 219, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            color: #3498db;
+            margin-bottom: 10px;
+            font-size: 2.8rem;
+            text-shadow: 0 2px 10px rgba(52, 152, 219, 0.3);
+        }
+
+        h2 {
+            color: #2ecc71;
+            margin: 25px 0 15px;
+            font-size: 2.2rem;
+            border-right: 4px solid #2ecc71;
+            padding-right: 15px;
+        }
+
+        h3 {
+            color: #f39c12;
+            margin: 20px 0 10px;
+            font-size: 1.8rem;
+        }
+
+        h4 {
+            color: #3498db;
+            margin: 15px 0;
+            font-size: 1.5rem;
+        }
+
+        /* الشرائح */
+        .slides-container {
+            position: relative;
+            min-height: 600px;
+        }
+
+        .slide {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 35px;
+            margin: 25px 0;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .slide.active {
+            display: block;
+            animation: slideIn 0.5s;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* البطاقات */
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 20px 0;
+            border-right: 5px solid #3498db;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .card.success {
+            border-right-color: #2ecc71;
+        }
+
+        .card.warning {
+            border-right-color: #e74c3c;
+        }
+
+        .card.info {
+            border-right-color: #f39c12;
+        }
+
+        /* الأزرار */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            gap: 15px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+            min-width: 150px;
+            justify-content: center;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(52, 152, 219, 0.4);
+        }
+
+        button:active {
+            transform: translateY(-1px);
+        }
+
+        button.secondary {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+        }
+
+        button.warning-btn {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* شريط التقدم */
+        .progress-container {
+            margin: 25px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2ecc71, #9b59b6);
+            width: 0%;
+            transition: width 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border-radius: 5px;
+        }
+
+        .slide-info {
+            display: flex;
+            justify-content: space-between;
+            color: #bbb;
+            font-size: 0.95rem;
+        }
+
+        /* الأسئلة */
+        .question-box {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(39, 174, 96, 0.2));
+            border: 2px solid #2ecc71;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 25px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .question-box:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.1), transparent);
+            border-radius: 0 0 0 100%;
+        }
+
+        .question-box h3 {
+            color: #2ecc71;
+            margin-bottom: 15px;
+        }
+
+        .answer-box {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.15), rgba(192, 57, 43, 0.15));
+            border: 2px solid #e74c3c;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 25px 0;
+            display: none;
+        }
+
+        .answer-box.show {
+            display: block;
+            animation: expand 0.5s;
+        }
+
+        @keyframes expand {
+            from {
+                opacity: 0;
+                max-height: 0;
+                padding-top: 0;
+                padding-bottom: 0;
+            }
+
+            to {
+                opacity: 1;
+                max-height: 1000px;
+                padding-top: 25px;
+                padding-bottom: 25px;
+            }
+        }
+
+        /* الشبكة */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin: 25px 0;
+        }
+
+        /* الكود */
+        .code-block {
+            background: #2c3e50;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            direction: ltr;
+            text-align: left;
+            overflow-x: auto;
+            border-right: 4px solid #3498db;
+        }
+
+        .code-block code {
+            color: #2ecc71;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .code-block .comment {
+            color: #7f8c8d;
+        }
+
+        /* القوائم */
+        ul,
+        ol {
+            padding-right: 25px;
+            margin: 15px 0;
+        }
+
+        li {
+            margin: 12px 0;
+            padding-right: 10px;
+            line-height: 1.6;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, rgba(52, 152, 219, 0.3) 0%, transparent 100%);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        /* المؤقت */
+        .timer {
+            background: rgba(52, 152, 219, 0.15);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+            font-size: 1.3rem;
+            border: 1px solid rgba(52, 152, 219, 0.3);
+        }
+
+        .timer i {
+            color: #3498db;
+            margin-left: 10px;
+        }
+
+        /* المخططات */
+        .diagram {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .component-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .component {
+            background: rgba(52, 152, 219, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .component:hover {
+            transform: scale(1.05);
+        }
+
+        .component i {
+            font-size: 2.5rem;
+            color: #3498db;
+            margin-bottom: 10px;
+        }
+
+        /* المراجع */
+        .references {
+            background: rgba(155, 89, 182, 0.1);
+            border-radius: 10px;
+            padding: 25px;
+            margin: 25px 0;
+            border-right: 4px solid #9b59b6;
+        }
+
+        .ref-item {
+            margin: 15px 0;
+            padding-right: 15px;
+            border-right: 2px solid rgba(155, 89, 182, 0.5);
+        }
+
+        /* التجاوب */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.8rem;
+            }
+
+            .slide {
+                padding: 20px;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .component-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* تأثيرات خاصة */
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(46, 204, 113, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(46, 204, 113, 0);
+            }
+        }
+
+        /* العلامات */
+        .badge {
+            display: inline-block;
+            background: #e74c3c;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .badge.success {
+            background: #2ecc71;
+        }
+
+        .badge.info {
+            background: #3498db;
+        }
+
+        .badge.warning {
+            background: #f39c12;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- شاشة التحميل -->
+    <div id="loading" class="loading-screen">
+        <div class="loader">
+            <i class="fas fa-cogs"></i>
+            <h2>جاري تحميل العرض التقديمي...</h2>
+            <div class="progress-bar" style="width: 300px; margin: 20px auto;">
+                <div class="progress-fill" id="load-progress"></div>
+            </div>
+            <p>إدارة ومراقبة وتحسين أداء نظام التشغيل</p>
+        </div>
+    </div>
+
+    <!-- الشاشة الرئيسية -->
+    <div id="main-screen" class="main-screen container">
+        <!-- شريط التقدم -->
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="slide-progress"></div>
+            </div>
+            <div class="slide-info">
+                <span><i class="fas fa-sliders-h"></i> إدارة أداء نظام التشغيل</span>
+                <span>الشريحة <span id="current-slide">1</span> من <span id="total-slides">11</span></span>
+            </div>
+        </div>
+
+        <!-- الشرائح -->
+        <div class="slides-container">
+            <!-- الشريحة 1: العنوان -->
+            <div class="slide active" id="slide1">
+                <div class="header">
+                    <h1><i class="fas fa-chart-line"></i> إدارة ومراقبة وتحسين أداء نظام التشغيل</h1>
+                    <p style="font-size: 1.2rem; margin: 10px 0; color: #bbb;">
+                        Management, Monitoring, and Optimization of OS Performance
+                    </p>
+                    <div
+                        style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 10px;">
+                        <p><i class="fas fa-user-graduate"></i> إعداد: [بكيل عبدالوكيل دحان الشهابي]</p>
+                        <p><i class="fas fa-book"></i> المقرر: أنظمة التشغيل</p>
+                        <p><i class="fas fa-calendar-alt"></i> التاريخ: <span id="current-date"></span></p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fas fa-bullseye"></i> أهداف العرض:</h3>
+                    <ul>
+                        <li>فهم مفاهيم إدارة أداء نظام التشغيل</li>
+                        <li>معرفة أدوات وأساليب المراقبة</li>
+                        <li>تعلم استراتيجيات التحسين والتطوير</li>
+                        <li>تطبيق المعرفة في سيناريوهات واقعية</li>
+                    </ul>
+                </div>
+
+                <div class="timer">
+                    <i class="fas fa-hourglass-start"></i>
+                    الوقت المقدر للعرض: <strong>20 دقيقة</strong>
+                </div>
+            </div>
+
+            <!-- الشريحة 2: مقدمة -->
+            <div class="slide" id="slide2">
+                <h2><i class="fas fa-question-circle"></i> ما المقصود بأداء نظام التشغيل؟</h2>
+
+                <div class="card">
+                    <h3><i class="fas fa-info-circle"></i> التعريف:</h3>
+                    <p style="font-size: 1.2rem; line-height: 1.8;">
+                        أداء نظام التشغيل يشير إلى <span class="highlight">كفاءة النظام</span> في استخدام الموارد
+                        المتاحة
+                        (المعالج، الذاكرة، التخزين، الشبكة) لإنجاز المهام المطلوبة بأقل وقت واستهلاك للموارد.
+                    </p>
+                </div>
+
+                <h3><i class="fas fa-layer-group"></i> العناصر الرئيسية للأداء:</h3>
+                <div class="grid">
+                    <div class="card success">
+                        <h4><i class="fas fa-stopwatch"></i> وقت الاستجابة</h4>
+                        <p>Response Time - الفترة بين طلب العملية وبدء تنفيذها</p>
+                        <div class="progress-bar" style="margin: 10px 0;">
+                            <div class="progress-fill" style="width: 70%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="card success">
+                        <h4><i class="fas fa-tachometer-alt"></i> الإنتاجية</h4>
+                        <p>Throughput - عدد المهام المكتملة في وحدة الزمن</p>
+                        <div class="progress-bar" style="margin: 10px 0;">
+                            <div class="progress-fill" style="width: 85%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="card info">
+                        <h4><i class="fas fa-chart-pie"></i> استخدام الموارد</h4>
+                        <p>Resource Utilization - نسبة استغلال كل مكون</p>
+                        <div class="progress-bar" style="margin: 10px 0;">
+                            <div class="progress-fill" style="width: 60%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="card warning">
+                        <h4><i class="fas fa-expand-arrows-alt"></i> قابلية التوسع</h4>
+                        <p>Scalability - قدرة النظام على التعامل مع الأحمال المتزايدة</p>
+                        <div class="progress-bar" style="margin: 10px 0;">
+                            <div class="progress-fill" style="width: 90%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="diagram">
+                    <h4><i class="fas fa-project-diagram"></i> مكونات أداء النظام:</h4>
+                    <div class="component-grid">
+                        <div class="component">
+                            <i class="fas fa-microchip"></i>
+                            <h5>وحدة المعالجة (CPU)</h5>
+                            <p>سرعة التنفيذ وكفاءة المعالجة</p>
+                        </div>
+                        <div class="component">
+                            <i class="fas fa-memory"></i>
+                            <h5>الذاكرة (RAM)</h5>
+                            <p>سعة التخزين المؤقت وسرعة الوصول</p>
+                        </div>
+                        <div class="component">
+                            <i class="fas fa-hdd"></i>
+                            <h5>التخزين (Disk)</h5>
+                            <p>سرعة القراءة/الكتابة وسعة التخزين</p>
+                        </div>
+                        <div class="component">
+                            <i class="fas fa-network-wired"></i>
+                            <h5>الشبكة</h5>
+                            <p>سرعة النقل وعرض النطاق</p>
+                        </div>
+                        <div class="component">
+                            <i class="fas fa-code"></i>
+                            <h5>النواة (Kernel)</h5>
+                            <p>كفاءة جدولة العمليات</p>
+                        </div>
+                        <div class="component">
+                            <i class="fas fa-cogs"></i>
+                            <h5>التطبيقات</h5>
+                            <p>تحسين الكود واستخدام الموارد</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الشريحة 3: إدارة أداء نظام التشغيل -->
+            <div class="slide" id="slide3">
+                <h2><i class="fas fa-tasks"></i> الجزء الأول: إدارة أداء نظام التشغيل</h2>
+
+                <div class="card">
+                    <h3><i class="fas fa-cog"></i> ما المقصود بالإدارة؟</h3>
+                    <p style="font-size: 1.1rem; line-height: 1.7;">
+                        الإدارة تشمل <span class="highlight">التخطيط والتنظيم والمراقبة والتحكم</span> في موارد النظام
+                        لضمان الأداء الأمثل وتحقيق أهداف الأداء المطلوبة.
+                    </p>
+                </div>
+
+                <h3><i class="fas fa-list-check"></i> مهام إدارة الأداء:</h3>
+                <div class="grid">
+                    <div class="card">
+                        <h4><i class="fas fa-balance-scale"></i> تخصيص الموارد</h4>
+                        <p>تحديد كيفية توزيع الموارد بين التطبيقات والعمليات المختلفة</p>
+                        <span class="badge info">Priority</span>
+                        <span class="badge info">Quotas</span>
+                    </div>
+
+                    <div class="card">
+                        <h4><i class="fas fa-sliders-h"></i> ضبط إعدادات النواة</h4>
+                        <p>Kernel parameters tuning - تحسين إعدادات نظام التشغيل الأساسية</p>
+                        <span class="badge warning">sysctl</span>
+                        <span class="badge warning">/proc/sys</span>
+                    </div>
+
+                    <div class="card">
+                        <h4><i class="fas fa-sitemap"></i> إدارة العمليات</h4>
+                        <p>تحديد أولوية التنفيذ وجدولة العمليات بكفاءة</p>
+                        <span class="badge success">nice</span>
+                        <span class="badge success">renice</span>
+                    </div>
+
+                    <div class="card">
+                        <h4><i class="fas fa-brain"></i> إدارة الذاكرة</h4>
+                        <p>تخصيص واستعادة الذاكرة، إدارة الذاكرة الافتراضية</p>
+                        <span class="badge">swappiness</span>
+                        <span class="badge">OOM Killer</span>
+                    </div>
+                </div>
+
+                <div class="card info">
+                    <h4><i class="fas fa-terminal"></i> مثال عملي (نظام Linux):</h4>
+                    <div class="code-block">
+                        <code>
+                            <span class="comment"># ضبط أولوية عملية معينة عند البدء</span><br>
+                            <span class="highlight">nice -n -10 /usr/bin/important_process</span><br><br>
+                            
+                            <span class="comment"># تغيير أولوية عملية قيد التنفيذ</span><br>
+                            <span class="highlight">renice -5 -p 1234</span><br><br>
+                            
+                            <span class="comment"># عرض أولوية العمليات الحالية</span><br>
+                            ps -eo pid,ni,comm | head -20
+                        </code>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h4><i class="fas fa-chart-bar"></i> مخطط إدارة الموارد:</h4>
+                    <div
+                        style="padding: 15px; background: rgba(255,255,255,0.05); border-radius: 10px; text-align: center;">
+                        <p>مدير النظام → توزيع الموارد ← التطبيقات</p>
+                        <p style="color: #3498db; margin: 10px 0;">
+                            <i class="fas fa-arrow-down"></i><br>
+                            مراقبة الأداء وتحليل البيانات<br>
+                            <i class="fas fa-arrow-down"></i><br>
+                            اتخاذ قرارات التحسين
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الشريحة 4: مراقبة أداء نظام التشغيل -->
+            <div class="slide" id="slide4">
+                <h2><i class="fas fa-binoculars"></i> الجزء الثاني: مراقبة أداء نظام التشغيل</h2>
+
+                <div class="card warning">
+                    <h3><i class="fas fa-question"></i> لماذا المراقبة؟</h3>
+                    <div class="grid"
+                        style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-top: 15px;">
+                        <div>
+                            <h5><i class="fas fa-search"></i> اكتشاف الاختناقات</h5>
+                            <p>Bottlenecks - تحديد نقاط الضعف</p>
+                        </div>
+                        <div>
+                            <h5><i class="fas fa-bell"></i> التنبيه المبكر</h5>
+                            <p>اكتشاف المشاكل قبل تفاقمها</p>
+                        </div>
+                        <div>
+                            <h5><i class="fas fa-database"></i> جمع البيانات</h5>
+                            <p>لأغراض التحليل والتخطيط</p>
+                        </div>
+                        <div>
+                            <h5><i class="fas fa-chart-line"></i> قياس الأداء</h5>
+                            <p>مقارنة الأداء قبل وبعد التحسين</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3><i class="fas fa-toolbox"></i> أدوات المراقبة الشائعة:</h3>
+
+                <div class="card">
+                    <h4><i class="fas fa-microchip"></i> 1. مراقبة وحدة المعالجة المركزية:</h4>
+                    <p><strong>الأدوات:</strong> top، htop، mpstat، sar</p>
+                    <div class="code-block">
+                        <code>
+                            <span class="comment"># مراقبة استخدام CPU لكل نواة</span><br>
+                            <span class="highlight">mpstat -P ALL 2</span><br>
+                            <span class="comment"># التقرير: كل 2 ثانية عن جميع المعالجات</span><br><br>
+                            
+                            <span class="comment"># عرض العمليات الأكثر استهلاكاً للـ CPU</span><br>
+                            <span class="highlight">top -o %CPU</span><br>
+                            <span class="comment"># أو باستخدام htop (واجهة ملونة)</span><br>
+                            <span class="highlight">htop</span>
+                        </code>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h4><i class="fas fa-memory"></i> 2. مراقبة الذاكرة:</h4>
+                    <p><strong>الأدوات:</strong> free، vmstat، /proc/meminfo</p>
+                    <div class="code-block">
+                        <code>
+                            <span class="comment"># عرض استخدام الذاكرة بشكل مقروء</span><br>
+                            <span class="highlight">free -h</span><br>
+                            <span class="comment"># Output: total, used, free, shared, buff/cache, available</span><br><br>
+                            
+                            <span class="comment"># إحصائيات الذاكرة والعمليات</span><br>
+                            <span class="highlight">vmstat 5</span><br>
+                            <span class="comment"># تقرير كل 5 ثوانٍ</span>
+                        </code>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h4><i class="fas fa-hdd"></i> 3. مراقبة القرص:</h4>
+                    <p><strong>الأدوات:</strong> iostat، iotop، df، du</p>
+                    <div class="code-block">
+                        <code>
+                            <span class="comment"># مراقبة أداء أجهزة التخزين</span><br>
+                            <span class="highlight">iostat -dx 5</span><br>
+                            <span class="comment"># تفاصيل موسعة كل 5 ثوانٍ</span><br><br>
+                            
+                            <span class="comment"># مراقبة عمليات القرص في الوقت الحقيقي</span><br>
+                            <span class="highlight">iotop</span><br>
+                            <span class="comment"># مشابه لـ top ولكن للقرص</span>
+                        </code>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h4><i class="fas fa-network-wired"></i> 4. مراقبة الشبكة:</h4>
+                    <p><strong>الأدوات:</strong> iftop، nethogs، ss، netstat</p>
+                    <div class="code-block">
+                        <code>
+                            <span class="comment"># عرض حركة الشبكة في الوقت الحقيقي</span><br>
+                            <span class="highlight">iftop</span><br>
+                            <span class="comment"># مشابه لـ top ولكن للشبكة</span><br><br>
+                            
+                            <span class="comment"># إحصائيات واجهات الشبكة</span><br>
+                            <span class="highlight">ip -s link</span><br>
+                            <span class="comment"># أو ss للاتصالات النشطة</span><br>
+                            <span class="highlight">ss -tunap</span>
+                        </code>
+                    </div>
+                </div>
+
+                <div class="card info">
+                    <h4><i class="fas fa-desktop"></i> صورة: برنامج htop للمراقبة</h4>
+                    <div
+                        style="padding: 15px; background: #2c3e50; border-radius: 8px; font-family: monospace; line-height: 1.4;">
+                        <div style="color: #2ecc71;">htop 3.0.5</div>
+                        <div>CPU[||||||||||||||||||||| 85.5%] Tasks: 145, 345 thr; 3 running</div>
+                        <div>Mem[|||||||||||||||||| 75.2%] Load average: 1.85 1.67 1.45</div>
+                        <div>Swp[| 2.1%] Uptime: 20 days, 15:30:25</div>
+                        <hr style="border-color: #555; margin: 10px 0;">
+                        <div>
+                            <span style="color: #3498db;">PID</span>
+                            <span style="color: #f39c12;">USER</span>
+                            <span style="color: #2ecc71;">PRI</span>
+                            <span style="color: #e74c3c;">NI</span>
+                            <span style="color: #9b59b6;">%CPU</span>
+                            <span style="color: #1abc9c;">%MEM</span>
+                            <span style="color: #fff;">COMMAND</span>
+                        </div>
+                        <div>1234 root 20 0 45.5 12.3 /usr/bin/apache2</div>
+                        <div>5678 mysql 20 0 32.1 25.8 /usr/sbin/mysqld</div>
+                        <div>9012 user 20 0 15.3 4.2 /usr/bin/python3</div>
+                    </div>
+                    <p style="margin-top: 10px; color: #bbb; font-size: 0.9rem;">
+                        <i class="fas fa-info-circle"></i> htop يوفر واجهة ملونة تفاعلية لمراقبة النظام بالكامل
+                    </p>
+                </div>
+            </div>
+
+            <!-- الشريحة 5: مثال متكامل للمراقبة -->
+            <div class="slide" id="slide5">
+                <h2><i class="fas fa-search-plus"></i> مثال متكامل للمراقبة</h2>
+
+                <div class="card warning">
+                    <h3><i class="fas fa-server"></i> سيناريو: خادم ويب بطيء الاستجابة</h3>
+                    <p>نقوم بتشخيص المشكلة خطوة بخطوة باستخدام أدوات المراقبة</p>
+                </div>
+
+                <div class="card">
+                    <h4><i class="fas fa-play-circle"></i> الخطوة 1: مراقبة الحمل العام</h4>
+                    <div class="code-block">
+                        <code>
+                            <span class="highlight">uptime</span><br>
+                            <span class="comment"># الناتج:</span><br>
+                            <span style="color: #e74c3c;">10:30:00 up 20 days, 3:15, 3 users, load average: 4.5, 3.2, 2.8</span><br><br>
+                            <span class="comment"># التفسير: load average مرتفع (4.5) على نظام ربما بـ 4 أنوية</span>
+                        </code>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h4><i class="fas fa-microchip"></i> الخطوة 2: تحديد العمليات الأكثر استهلاكاً للمعالج</h4>
+                    <div class="code-block">
+                        <code>
+                            <span class="highlight">ps aux --sort=-%cpu | head -10</span><br>
+                            <span class="comment"># الناتج: قائمة بأكثر 10 عمليات استهلاكاً للـ CPU</span><br><br>
+                            
+                            <span class="highlight">top -bn1 | head -20</span><br>
+                            <span class="comment"># أو استخدام top في وضع الدفعة</span>
+                        </code>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h4><i class="fas fa-memory"></i> الخطوة 3: مراقبة استخدام الذاكرة</h4>
+                    <div class="code-block">
+                        <code>
+                            <span class="highlight">free -m</span><br>
+                            <span class="comment"># الناتج:</span><br>
+                            <span>              total        used        free      shared  buff/cache   available</span><br>
+                            <span>Mem:          16048        12005        1024         512        3019        3542</span><br>
+                            <span>Swap:          8192         4096        4096</span><br><br>
+                            <span class="comment"># التفسير: الذاكرة ممتلئة بنسبة 75%، والـ swap مستخدم بنسبة 50%</span>
+                        </code>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h4><i class="fas fa-hdd"></i> الخطوة 4: مراقبة نشاط القرص</h4>
+                    <div class="code-block">
+                        <code>
+                            <span class="highlight">iostat -x 2 5</span><br>
+                            <span class="comment"># الناتج (مبسط):</span><br>
+                            <span>Device:  rrqm/s wrqm/s  r/s  w/s rkB/s wkB/s avgrq-sz avgqu-sz await r_await w_await svctm %util</span><br>
+                            <span style="color: #e74c3c;">sda:     0.00   5.00 100.0 50.0 800.0 200.0    10.0     15.0 100.0   80.0  140.0   6.0  90.0</span><br><br>
+                            <span class="comment"># التفسير: %util = 90% → القرص يعمل بكامل طاقته تقريباً</span>
+                        </code>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h4><i class="fas fa-network-wired"></i> الخطوة 5: مراقبة الاتصالات الشبكية</h4>
+                    <div class="code-block">
+                        <code>
+                            <span class="highlight">ss -tunap | grep :80</span><br>
+                            <span class="comment"># الناتج: عرض جميع الاتصالات على منفذ 80 (HTTP)</span><br><br>
+                            
+                            <span class="highlight">netstat -ant | grep :80 | wc -l</span><br>
+                            <span class="comment"># عدد الاتصالات النشطة على منفذ 80</span>
+                        </code>
+                    </div>
+                </div>
+
+                <div class="card success">
+                    <h4><i class="fas fa-diagnoses"></i> التشخيص النهائي:</h4>
+                    <ul>
+                        <li>المعالج: حمل مرتفع (load average: 4.5)</li>
+                        <li>الذاكرة: ممتلئة بنسبة 75% مع استخدام swap</li>
+                        <li>القرص: نشاط عالي (%util = 90%)</li>
+                        <li>الشبكة: عدد كبير من الاتصالات النشطة</li>
+                    </ul>
+                    <p style="margin-top: 15px; color: #2ecc71;">
+                        <i class="fas fa-lightbulb"></i>
+                        <strong>الخلاصة:</strong> الخادم يعاني من حمل زائد، يحتاج إلى تحسين الإعدادات أو زيادة الموارد
+                    </p>
+                </div>
+            </div>
+
+            <!-- الشريحة 6: تحسين أداء نظام التشغيل -->
+            <div class="slide" id="slide6">
+                <h2><i class="fas fa-rocket"></i> الجزء الثالث: تحسين أداء نظام التشغيل</h2>
+
+                <div class="card">
+                    <h3><i class="fas fa-bullseye"></i> استراتيجيات التحسين:</h3>
+                    <p>تحسين الأداء يجب أن يكون مبنياً على بيانات المراقبة وليس التخمين</p>
+                </div>
+
+                <div class="grid">
+                    <div class="card">
+                        <h4><i class="fas fa-microchip"></i> 1. تحسين استخدام المعالج</h4>
+                        <ul>
+                            <li>ضبط أولوية العمليات (nice values)</li>
+                            <li>استخدام affinity لربط العمليات بمعالجات محددة</li>
+                            <li>تفعيل تقنيات توفير الطاقة (Power Saving)</li>
+                        </ul>
+                        <div class="code-block" style="margin-top: 10px;">
+                            <code>
+                                <span class="comment"># ربط عملية بمعالجات محددة</span><br>
+                                <span class="highlight">taskset -c 0,1 /usr/bin/application</span><br><br>
+                                
+                                <span class="comment"># تغيير governor للـ CPU</span><br>
+                                <span class="highlight">cpupower frequency-set -g performance</span>
+                            </code>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h4><i class="fas fa-memory"></i> 2. تحسين الذاكرة</h4>
+                        <ul>
+                            <li>ضبط swappiness (نسبة استخدام swap)</li>
+                            <li>استخدام huge pages للتطبيقات الكبيرة</li>
+                            <li>تحسين إعدادات الذاكرة الافتراضية</li>
+                        </ul>
+                        <div class="code-block" style="margin-top: 10px;">
+                            <code>
+                                <span class="comment"># تقليل استخدام swap</span><br>
+                                <span class="highlight">sysctl vm.swappiness=10</span><br><br>
+                                
+                                <span class="comment"># تفعيل transparent huge pages</span><br>
+                                <span class="highlight">echo always > /sys/kernel/mm/transparent_hugepage/enabled</span>
+                            </code>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h4><i class="fas fa-hdd"></i> 3. تحسين أداء القرص</h4>
+                        <ul>
+                            <li>اختيار نظام الملفات المناسب (XFS vs EXT4)</li>
+                            <li>ضبط mount options (noatime, nodiratime)</li>
+                            <li>استخدام RAID المناسب للحمل</li>
+                            <li>تفعيل التخزين المؤقت (caching)</li>
+                        </ul>
+                        <div class="code-block" style="margin-top: 10px;">
+                            <code>
+                                <span class="comment"># في /etc/fstab</span><br>
+                                <span class="highlight">/dev/sda1 / ext4 defaults,noatime,nodiratime 0 1</span><br><br>
+                                
+                                <span class="comment"># زيادة read-ahead</span><br>
+                                <span class="highlight">blockdev --setra 4096 /dev/sda</span>
+                            </code>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h4><i class="fas fa-network-wired"></i> 4. تحسين الشبكة</h4>
+                        <ul>
+                            <li>ضبط buffer sizes (TCP buffers)</li>
+                            <li>استخدام TCP congestion control المناسب</li>
+                            <li>تحسين إعدادات الجدار الناري</li>
+                            <li>تفعيل TCP Fast Open</li>
+                        </ul>
+                        <div class="code-block" style="margin-top: 10px;">
+                            <code>
+                                <span class="comment"># تحسين إعدادات TCP</span><br>
+                                <span class="highlight">sysctl -w net.ipv4.tcp_window_scaling=1</span><br>
+                                <span class="highlight">sysctl -w net.core.rmem_max=16777216</span><br>
+                                <span class="highlight">sysctl -w net.core.wmem_max=16777216</span>
+                            </code>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card info">
+                    <h4><i class="fas fa-exclamation-triangle"></i> قاعدة ذهبية في التحسين:</h4>
+                    <p style="font-size: 1.2rem; text-align: center; padding: 15px;">
+                        <i class="fas fa-quote-left"></i>
+                        <strong>لا يمكنك تحسين ما لا تستطيع قياسه</strong>
+                        <i class="fas fa-quote-right"></i>
+                        <br>
+                        <span style="color: #bbb; font-size: 1rem;">- بيتر دراكر</span>
+                    </p>
+                    <p style="margin-top: 10px;">
+                        <i class="fas fa-check-circle"></i>
+                        قم بالقياس أولاً ← حدد المشكلة ← نفذ التحسين ← قم بالقياس مرة أخرى
+                    </p>
+                </div>
+            </div>
+
+            <!-- الشريحة 7: دراسة حالة - خادم قاعدة بيانات -->
+            <div class="slide" id="slide7">
+                <h2><i class="fas fa-database"></i> دراسة حالة: تحسين خادم قاعدة بيانات</h2>
+
+                <div class="card warning">
+                    <h3><i class="fas fa-exclamation-circle"></i> المشكلة:</h3>
+                    <p>بطء في استعلامات قاعدة البيانات MySQL، أوقات استجابة تصل إلى 5 ثوانٍ</p>
+                </div>
+
+                <div class="card">
+                    <h4><i class="fas fa-tools"></i> الحلول المطبقة:</h4>
+
+                    <div class="card">
+                        <h5><i class="fas fa-hdd"></i> تحسين I/O:</h5>
+                        <div class="code-block">
+                            <code>
+                                <span class="comment"># تغيير elevator algorithm لجدولة طلبات القرص</span><br>
+                                <span class="highlight">echo deadline > /sys/block/sda/queue/scheduler</span><br><br>
+                                
+                                <span class="comment"># زيادة read-ahead value</span><br>
+                                <span class="highlight">blockdev --setra 8192 /dev/sda</span>
+                            </code>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h5><i class="fas fa-memory"></i> تحسين الذاكرة:</h5>
+                        <div class="code-block">
+                            <code>
+                                <span class="comment"># زيادة shared memory لنواة Linux</span><br>
+                                <span class="highlight">sysctl -w kernel.shmmax=2147483648</span><br>
+                                <span class="highlight">sysctl -w kernel.shmall=2097152</span><br><br>
+                                
+                                <span class="comment"># تحسين إعدادات الذاكرة الافتراضية</span><br>
+                                <span class="highlight">sysctl -w vm.dirty_ratio=10</span><br>
+                                <span class="highlight">sysctl -w vm.dirty_background_ratio=5</span>
+                            </code>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h5><i class="fas fa-sliders-h"></i> ضبط limits:</h5>
+                        <div class="code-block">
+                            <code>
+                                <span class="comment"># في ملف /etc/security/limits.conf</span><br>
+                                mysql soft nofile 65535<br>
+                                mysql hard nofile 65535<br>
+                                mysql soft nproc 16384<br>
+                                mysql hard nproc 16384<br><br>
+                                
+                                <span class="comment"># في my.cnf (إعدادات MySQL)</span><br>
+                                innodb_buffer_pool_size = 8G<br>
+                                innodb_log_file_size = 1G<br>
+                                max_connections = 500
+                            </code>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card success pulse">
+                    <h4><i class="fas fa-chart-line"></i> النتائج:</h4>
+                    <div style="text-align: center; padding: 20px;">
+                        <div
+                            style="display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap;">
+                            <div>
+                                <h5 style="color: #e74c3c;">قبل التحسين</h5>
+                                <div style="font-size: 2rem; color: #e74c3c;">5 ثوان</div>
+                                <p>متوسط وقت الاستجابة</p>
+                            </div>
+                            <div style="font-size: 2rem; color: #3498db;">
+                                <i class="fas fa-long-arrow-alt-left"></i>
+                                <i class="fas fa-cogs"></i>
+                                <i class="fas fa-long-arrow-alt-left"></i>
+                            </div>
+                            <div>
+                                <h5 style="color: #2ecc71;">بعد التحسين</h5>
+                                <div style="font-size: 2rem; color: #2ecc71;">3 ثوان</div>
+                                <p>متوسط وقت الاستجابة</p>
+                            </div>
+                        </div>
+                        <div
+                            style="margin-top: 20px; padding: 15px; background: rgba(46, 204, 113, 0.1); border-radius: 10px;">
+                            <h5><i class="fas fa-trophy"></i> تحسن الأداء بنسبة <strong
+                                    style="color: #2ecc71;">40%</strong></h5>
+                            <p>مع زيادة القدرة على التعامل مع عدد أكبر من الاتصالات المتزامنة</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h4><i class="fas fa-lightbulb"></i> الدروس المستفادة:</h4>
+                    <ul>
+                        <li>تحسين I/O له أكبر تأثير على قواعد البيانات</li>
+                        <li>تخصيص الذاكرة المناسب ضروري للأداء الجيد</li>
+                        <li>ضبط limits يمنع مشاكل نفاذ الموارد</li>
+                        <li>التحسين المستمر بناءً على المراقبة</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- الشريحة 8: أدوات متقدمة -->
+            <div class="slide" id="slide8">
+                <h2><i class="fas fa-tools"></i> أدوات متقدمة للمراقبة والتحليل</h2>
+
+                <div class="card">
+                    <h3><i class="fas fa-chart-bar"></i> 1. Perf (Linux Performance Analysis)</h3>
+                    <p>أداة قوية لتحليل الأداء على مستوى النواة والتطبيقات</p>
+                    <div class="code-block">
+                        <code>
+                            <span class="comment"># تسجيل بيانات الأداء لبرنامج معين</span><br>
+                            <span class="highlight">perf record -g /path/to/program</span><br><br>
+                            
+                            <span class="comment"># عرض التقرير</span><br>
+                            <span class="highlight">perf report</span><br><br>
+                            
+                            <span class="comment"># تحليل استخدام system calls</span><br>
+                            <span class="highlight">perf trace -p [PID]</span><br><br>
+                            
+                            <span class="comment"># قائمة جميع الأحداث القابلة للقياس</span><br>
+                            <span class="highlight">perf list</span>
+                        </code>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fas fa-search"></i> 2. SystemTap</h3>
+                    <p>نظام تتبع وتصحيح ديناميكي لنواة Linux</p>
+                    <div class="code-block">
+                        <code>
+                            <span class="comment"># تتبع استدعاءات النظام لعملية معينة</span><br>
+                            <span class="highlight">stap -e 'probe syscall.open { printf("%s %s\n", execname(), argstr) }'</span><br><br>
+                            
+                            <span class="comment"># مراقبة عمليات القرص</span><br>
+                            <span class="highlight">stap -e 'probe ioblock.request { printf("%s: %d\n", devname, size) }'</span><br><br>
+                            
+                            <span class="comment"># قياس وقت تنفيذ دالة</span><br>
+                            <span class="highlight">stap -e 'probe kernel.function("vfs_read") { start = gettimeofday_us() }</span><br>
+                            <span class="highlight">probe kernel.function("vfs_read").return { printf("%d\n", gettimeofday_us() - start) }'</span>
+                        </code>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fas fa-tachometer-alt"></i> 3. Grafana + Prometheus</h3>
+                    <p>نظام مراقبة متكامل مع لوحات تحكم تفاعلية</p>
+                    <div style="padding: 15px; background: rgba(255,255,255,0.05); border-radius: 10px;">
+                        <h5><i class="fas fa-desktop"></i> مكونات النظام:</h5>
+                        <ul>
+                            <li><strong>Prometheus:</strong> خادم لجمع وتخزين البيانات</li>
+                            <li><strong>Grafana:</strong> لوحات تحكم ومرئيات</li>
+                            <li><strong>Exporters:</strong> وكلاء لجمع البيانات من الأنظمة المختلفة</li>
+                            <li><strong>Alertmanager:</strong> نظام للتنبيهات</li>
+                        </ul>
+                    </div>
+                    <div
+                        style="margin-top: 15px; padding: 15px; background: #2c3e50; border-radius: 8px; font-family: monospace;">
+                        <div style="color: #e74c3c;">[ Dashboard: System Performance ]</div>
+                        <div>CPU Usage: ██████████ 85% | Memory: ████████ 72% | Disk I/O: █████ 45%</div>
+                        <div>Network: ██████████████ 92% | Load Average: 3.2, 2.8, 2.1</div>
+                        <div>Uptime: 45 days | Processes: 342 | Users: 8</div>
+                    </div>
+                    <p style="margin-top: 10px; color: #bbb; font-size: 0.9rem;">
+                        <i class="fas fa-info-circle"></i> Grafana توفر واجهة ويب تفاعلية لمراقبة الأنظمة بالزمن الحقيقي
+                    </p>
+                </div>
+
+                <div class="grid" style="margin-top: 20px;">
+                    <div class="card">
+                        <h4><i class="fab fa-windows"></i> Windows Performance Tools</h4>
+                        <ul>
+                            <li>Performance Monitor (perfmon)</li>
+                            <li>Resource Monitor (resmon)</li>
+                            <li>Windows Performance Analyzer (WPA)</li>
+                            <li>Process Explorer</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <h4><i class="fab fa-apple"></i> macOS Tools</h4>
+                        <ul>
+                            <li>Activity Monitor</li>
+                            <li>Instruments (من Xcode)</li>
+                            <li>top, vm_stat, iostat</li>
+                            <li>DTrace</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الشريحة 9: المراجع -->
+            <div class="slide" id="slide9">
+                <h2><i class="fas fa-book"></i> المراجع والمصادر</h2>
+
+                <div class="references">
+                    <h3><i class="fas fa-book-open"></i> الكتب:</h3>
+                    <div class="ref-item">
+                        <h4>"أنظمة التشغيل: مفاهيم أساسية"</h4>
+                        <p>أ.د. محمد فاروق - دار النشر للعلوم</p>
+                        <span class="badge">ISBN: 978-977-000-000-0</span>
+                    </div>
+
+                    <div class="ref-item">
+                        <h4>"Linux Performance"</h4>
+                        <p>Brendan Gregg - Addison-Wesley</p>
+                        <span class="badge">المرجع العملي لأداء Linux</span>
+                    </div>
+
+                    <div class="ref-item">
+                        <h4>"Windows Internals"</h4>
+                        <p>Mark Russinovich - Microsoft Press</p>
+                        <span class="badge">الجزء السابع، الإصدار السابع</span>
+                    </div>
+
+                    <div class="ref-item">
+                        <h4>"Oracle Solaris Performance"</h4>
+                        <p>Richard McDougall - Prentice Hall</p>
+                        <span class="badge">مفاهيم عامة تنطبق على معظم الأنظمة</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fas fa-globe"></i> المواقع الإلكترونية:</h3>
+                    <ul>
+                        <li>
+                            <strong>Brendan Gregg's Blog:</strong>
+                            <a href="https://www.brendangregg.com"
+                                style="color: #3498db;">https://www.brendangregg.com</a>
+                            <span class="badge info">مصدر غني بأدوات وتقنيات الأداء</span>
+                        </li>
+                        <li>
+                            <strong>Linux Kernel Documentation:</strong>
+                            <a href="https://www.kernel.org/doc/html/latest/"
+                                style="color: #3498db;">https://www.kernel.org/doc</a>
+                            <span class="badge info">الوثائق الرسمية للنواة</span>
+                        </li>
+                        <li>
+                            <strong>Microsoft Docs:</strong>
+                            <a href="https://docs.microsoft.com/en-us/windows-server/"
+                                style="color: #3498db;">https://docs.microsoft.com</a>
+                            <span class="badge info">وثائق Windows Server</span>
+                        </li>
+                        <li>
+                            <strong>Red Hat Performance Tuning Guide:</strong>
+                            <a href="https://access.redhat.com/documentation/"
+                                style="color: #3498db;">https://access.redhat.com</a>
+                            <span class="badge warning">دليل عملي للتحسين</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fas fa-video"></i> الدورات التعليمية:</h3>
+                    <div class="grid">
+                        <div>
+                            <h5><i class="fab fa-udemy"></i> Udemy</h5>
+                            <p>دورة "Linux Performance and Tuning"</p>
+                        </div>
+                        <div>
+                            <h5><i class="fab fa-coursera"></i> Coursera</h5>
+                            <p>تخصص "System Administration and IT Infrastructure"</p>
+                        </div>
+                        <div>
+                            <h5><i class="fas fa-university"></i> Linux Foundation</h5>
+                            <p>دورة "Performance Tuning Linux"</p>
+                        </div>
+                        <div>
+                            <h5><i class="fab fa-youtube"></i> YouTube</h5>
+                            <p>قناة "Brendan Gregg" و "Red Hat"</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card info">
+                    <h4><i class="fas fa-lightbulb"></i> نصائح للتعلم:</h4>
+                    <ul>
+                        <li>ابدأ بالأدوات الأساسية (top, vmstat, iostat)</li>
+                        <li>طبق ما تتعلمه على نظام تجريبي أولاً</li>
+                        <li>تابع المدونات المتخصصة في أداء الأنظمة</li>
+                        <li>شارك في مجتمعات مثل Stack Overflow و Server Fault</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- الشريحة 10: أسئلة للطلاب -->
+            <div class="slide" id="slide10">
+                <h2><i class="fas fa-question"></i> أسئلة للطلاب</h2>
+
+                <div class="question-box">
+                    <h3><i class="fas fa-brain"></i> السؤال الأول:</h3>
+                    <p style="font-size: 1.2rem; line-height: 1.6; margin: 15px 0;">
+                        "إذا كان لديك خادم يحمل <code>load average: 8.5, 7.2, 6.1</code> مع 4 أنوية معالجة،
+                        ماذا يعني هذا؟ وما هي الخطوات التي ستتخذها للتحقيق في المشكلة؟"
+                    </p>
+
+                    <div class="timer" id="thinking-timer">
+                        <i class="fas fa-hourglass-half"></i>
+                        وقت التفكير: <span id="timer-count">120</span> ثانية
+                    </div>
+
+                    <button onclick="showAnswer('answer1')" class="secondary">
+                        <i class="fas fa-eye"></i> عرض الإجابة
+                    </button>
+                </div>
+
+                <div id="answer1" class="answer-box">
+                    <h3><i class="fas fa-user-graduate"></i> إجابة الطالب:</h3>
+                    <div class="card">
+                        <h4><i class="fas fa-analytics"></i> تحليل load average:</h4>
+                        <ul>
+                            <li><strong>8.5:</strong> متوسط الحمل خلال الدقيقة الأخيرة</li>
+                            <li><strong>7.2:</strong> متوسط الحمل خلال 5 دقائق</li>
+                            <li><strong>6.1:</strong> متوسط الحمل خلال 15 دقيقة</li>
+                        </ul>
+                        <p style="margin-top: 10px;">
+                            <strong>التفسير:</strong> النظام يعاني من حمل زائد بشكل كبير. الحمل 8.5 يعني متوسط 8.5 عملية
+                            في حالة runnable أو uninterruptible sleep، بينما لدينا فقط 4 أنوية.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h4><i class="fas fa-stethoscope"></i> خطوات التحقيق:</h4>
+                        <ol>
+                            <li><strong>تحديد العمليات الأكثر استهلاكاً:</strong>
+                                <div class="code-block" style="margin: 5px 0;">
+                                    <code>top -o %CPU</code> أو <code>ps aux --sort=-%cpu | head -10</code>
+                                </div>
+                            </li>
+                            <li><strong>مراقبة استخدام الذاكرة:</strong>
+                                <div class="code-block" style="margin: 5px 0;">
+                                    <code>free -h</code> و <code>vmstat 2 10</code>
+                                </div>
+                            </li>
+                            <li><strong>التحقق من نشاط القرص:</strong>
+                                <div class="code-block" style="margin: 5px 0;">
+                                    <code>iostat -x 2 5</code> أو <code>iotop</code>
+                                </div>
+                            </li>
+                            <li><strong>فحص عمليات الانتظار:</strong>
+                                <div class="code-block" style="margin: 5px 0;">
+                                    <code>pidstat -d 2</code> أو <code>dstat</code>
+                                </div>
+                            </li>
+                            <li><strong>مراقبة الاتصالات الشبكية:</strong>
+                                <div class="code-block" style="margin: 5px 0;">
+                                    <code>ss -tunap</code> أو <code>netstat -ant</code>
+                                </div>
+                            </li>
+                            <li><strong>فحص logs للنظام:</strong>
+                                <div class="code-block" style="margin: 5px 0;">
+                                    <code>tail -f /var/log/syslog</code> أو <code>journalctl -f</code>
+                                </div>
+                            </li>
+                        </ol>
+                    </div>
+
+                    <div class="card success">
+                        <h4><i class="fas fa-lightbulb"></i> الحلول المقترحة:</h4>
+                        <ul>
+                            <li>إنهاء العمليات غير الضرورية</li>
+                            <li>ضبط أولويات العمليات (nice/renice)</li>
+                            <li>إضافة موارد (ذاكرة إضافية، معالجات)</li>
+                            <li>تحسين إعدادات التطبيقات</li>
+                            <li>توزيع الحمل على خوادم متعددة</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="question-box" style="margin-top: 30px;">
+                    <h3><i class="fas fa-brain"></i> السؤال الثاني:</h3>
+                    <p style="font-size: 1.2rem; line-height: 1.6; margin: 15px 0;">
+                        "ما الفرق بين <code>nice</code> و <code>renice</code>؟ ومتى تستخدم كل منهما؟ أعط أمثلة عملية."
+                    </p>
+
+                    <button onclick="showAnswer('answer2')" class="secondary">
+                        <i class="fas fa-eye"></i> عرض الإجابة
+                    </button>
+                </div>
+
+                <div id="answer2" class="answer-box">
+                    <h3><i class="fas fa-user-graduate"></i> إجابة الطالب:</h3>
+
+                    <div class="grid">
+                        <div class="card">
+                            <h4><i class="fas fa-play"></i> الأمر <code>nice</code>:</h4>
+                            <p><strong>الاستخدام:</strong> عند بدء تشغيل عملية جديدة</p>
+                            <p><strong>الوظيفة:</strong> تحديد أولويتها الابتدائية (nice value)</p>
+                            <div class="code-block" style="margin-top: 10px;">
+                                <code>
+                                    <span class="comment"># تشغيل عملية بخلفية منخفضة الأولوية</span><br>
+                                    <span class="highlight">nice -n 19 /usr/bin/backup.sh</span><br><br>
+                                    
+                                    <span class="comment"># تشغيل عملية بأولوية عالية (تتطلب صلاحيات root)</span><br>
+                                    <span class="highlight">sudo nice -n -20 /usr/bin/critical_process</span>
+                                </code>
+                            </div>
+                            <p style="margin-top: 10px;">
+                                <strong>المدى:</strong> من -20 (أعلى أولوية) إلى 19 (أدنى أولوية)
+                            </p>
+                        </div>
+
+                        <div class="card">
+                            <h4><i class="fas fa-sync-alt"></i> الأمر <code>renice</code>:</h4>
+                            <p><strong>الاستخدام:</strong> لتغيير أولوية عملية قيد التشغيل</p>
+                            <p><strong>الوظيفة:</strong> تعديل أولوية عملية موجودة بالفعل</p>
+                            <div class="code-block" style="margin-top: 10px;">
+                                <code>
+                                    <span class="comment"># تغيير أولوية عملية محددة (PID 1234)</span><br>
+                                    <span class="highlight">renice -n 5 -p 1234</span><br><br>
+                                    
+                                    <span class="comment"># تغيير أولوية جميع عمليات مستخدم معين</span><br>
+                                    <span class="highlight">renice -n 10 -u username</span>
+                                </code>
+                            </div>
+                            <p style="margin-top: 10px;">
+                                <strong>المدى:</strong> نفس مدى nice (-20 إلى 19)
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="card info">
+                        <h4><i class="fas fa-random"></i> الفروقات الرئيسية:</h4>
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                            <tr>
+                                <th style="padding: 10px; border-bottom: 1px solid #555;">المعيار</th>
+                                <th style="padding: 10px; border-bottom: 1px solid #555;">nice</th>
+                                <th style="padding: 10px; border-bottom: 1px solid #555;">renice</th>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border-bottom: 1px solid #444;">وقت الاستخدام</td>
+                                <td style="padding: 10px; border-bottom: 1px solid #444;">عند البدء</td>
+                                <td style="padding: 10px; border-bottom: 1px solid #444;">أثناء التنفيذ</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border-bottom: 1px solid #444;">التأثير</td>
+                                <td style="padding: 10px; border-bottom: 1px solid #444;">على عملية جديدة</td>
+                                <td style="padding: 10px; border-bottom: 1px solid #444;">على عملية موجودة</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border-bottom: 1px solid #444;">الاستخدام الشائع</td>
+                                <td style="padding: 10px; border-bottom: 1px solid #444;">المهام الخلفية الطويلة</td>
+                                <td style="padding: 10px; border-bottom: 1px solid #444;">التحكم في العمليات النشطة</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="card">
+                        <h4><i class="fas fa-scenario"></i> سيناريوهات عملية:</h4>
+                        <ul>
+                            <li><strong>استخدام nice:</strong> عند تشغيل backup ليلي - نعطيه أولوية منخفضة</li>
+                            <li><strong>استخدام renice:</strong> عندما نكتشف أن عملية تستهلك موارد كثيرة - نخفض أولويتها
+                            </li>
+                            <li><strong>استخدام كلاهما:</strong> تشغيل عملية بـ nice معين، ثم تعديلها لاحقاً بـ renice
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="question-box" style="margin-top: 30px;">
+                    <h3><i class="fas fa-brain"></i> السؤال الثالث:</h3>
+                    <p style="font-size: 1.2rem; line-height: 1.6; margin: 15px 0;">
+                        "كيف تفسر هذه النتائج من أمر <code>iostat</code>؟ وما هي الإجراءات التصحيحية المقترحة؟"
+                    </p>
+                    <div class="code-block">
+                        <code>
+Device: rrqm/s wrqm/s r/s w/s rkB/s wkB/s avgrq-sz avgqu-sz await r_await w_await svctm %util<br>
+<span style="color: #e74c3c;">sda:   0.00   5.00 100.00 50.00 800.00 200.00 10.00 15.00 100.00 80.00 140.00 6.00 90.00</span>
+                        </code>
+                    </div>
+
+                    <button onclick="showAnswer('answer3')" class="secondary">
+                        <i class="fas fa-eye"></i> عرض الإجابة
+                    </button>
+                </div>
+
+                <div id="answer3" class="answer-box">
+                    <h3><i class="fas fa-user-graduate"></i> إجابة الطالب:</h3>
+
+                    <div class="card">
+                        <h4><i class="fas fa-chart-bar"></i> تحليل المؤشرات:</h4>
+                        <ul>
+                            <li><strong>%util = 90%:</strong> القرص يعمل بنسبة 90% من طاقته - <span
+                                    style="color: #e74c3c;">مشكلة!</span></li>
+                            <li><strong>avgqu-sz = 15.00:</strong> متوسط طول طابور الانتظار 15 طلب - <span
+                                    style="color: #f39c12;">مرتفع جداً!</span></li>
+                            <li><strong>await = 100ms:</strong> متوسط وقت الانتظار 100 مللي ثانية - <span
+                                    style="color: #f39c12;">بطيء!</span></li>
+                            <li><strong>r/s = 100:</strong> 100 عملية قراءة في الثانية</li>
+                            <li><strong>w/s = 50:</strong> 50 عملية كتابة في الثانية</li>
+                            <li><strong>rkB/s = 800:</strong> 800 كيلوبايت قراءة في الثانية</li>
+                            <li><strong>wkB/s = 200:</strong> 200 كيلوبايت كتابة في الثانية</li>
+                        </ul>
+                    </div>
+
+                    <div class="card warning">
+                        <h4><i class="fas fa-exclamation-triangle"></i> التشخيص:</h4>
+                        <p>القرص <code>sda</code> يعاني من:</p>
+                        <ol>
+                            <li>ضغط شديد (%util = 90%)</li>
+                            <li>طابور انتظار طويل (avgqu-sz = 15)</li>
+                            <li>أوقات استجابة عالية (await = 100ms)</li>
+                            <li>نشاط قراءة مرتفع (100 عملية/ثانية)</li>
+                        </ol>
+                        <p style="margin-top: 10px;">
+                            <strong>النتيجة:</strong> القرص أصبح bottleneck للنظام بأكمله!
+                        </p>
+                    </div>
+
+                    <div class="card success">
+                        <h4><i class="fas fa-wrench"></i> الإجراءات التصحيحية:</h4>
+
+                        <div class="grid">
+                            <div class="card">
+                                <h5><i class="fas fa-code"></i> تحسين التطبيق:</h5>
+                                <ul>
+                                    <li>قراءات مجمعة بدلاً من قراءات صغيرة متكررة</li>
+                                    <li>زيادة حجم buffer للقراءة/الكتابة</li>
+                                    <li>تفعيل التخزين المؤقت في التطبيق</li>
+                                </ul>
+                            </div>
+
+                            <div class="card">
+                                <h5><i class="fas fa-sliders-h"></i> تحسين النظام:</h5>
+                                <ul>
+                                    <li>ترقية إلى أقراص أسرع (SSD بدلاً من HDD)</li>
+                                    <li>استخدام RAID 10 لتحسين الأداء</li>
+                                    <li>زيادة ذاكرة التخزين المؤقت</li>
+                                    <li>ضبط elevator scheduler</li>
+                                </ul>
+                            </div>
+
+                            <div class="card">
+                                <h5><i class="fas fa-file-alt"></i> تحسين نظام الملفات:</h5>
+                                <ul>
+                                    <li>استخدام mount options: <code>noatime,nodiratime</code></li>
+                                    <li>اختيار نظام ملفات سريع (XFS, ext4)</li>
+                                    <li>ضبط journaling settings</li>
+                                </ul>
+                            </div>
+
+                            <div class="card">
+                                <h5><i class="fas fa-archive"></i> حلول أخرى:</h5>
+                                <ul>
+                                    <li>تقسيم البيانات على أقراص متعددة</li>
+                                    <li>استخدام memory-mapped files</li>
+                                    <li>تفعيل compression للبيانات</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h4><i class="fas fa-terminal"></i> أمثلة عملية:</h4>
+                        <div class="code-block">
+                            <code>
+                                <span class="comment"># تغيير scheduler للقرص</span><br>
+                                <span class="highlight">echo deadline > /sys/block/sda/queue/scheduler</span><br><br>
+                                
+                                <span class="comment"># زيادة read-ahead</span><br>
+                                <span class="highlight">blockdev --setra 8192 /dev/sda</span><br><br>
+                                
+                                <span class="comment"># في /etc/fstab</span><br>
+                                <span class="highlight">/dev/sda1 /data ext4 defaults,noatime,nodiratime,data=writeback 0 2</span>
+                            </code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الشريحة 11: الخاتمة -->
+            <div class="slide" id="slide11">
+                <h2><i class="fas fa-flag-checkered"></i> الخاتمة والنقاط الرئيسية</h2>
+
+                <div class="card success">
+                    <h3><i class="fas fa-key"></i> النقاط الرئيسية:</h3>
+                    <ol style="font-size: 1.1rem;">
+                        <li><strong>إدارة الأداء عملية مستمرة</strong> وليست مرة واحدة</li>
+                        <li><strong>المراقبة المستمرة ضرورية</strong> للكشف المبكر عن المشاكل</li>
+                        <li><strong>التحسين يجب أن يعتمد على بيانات واقعية</strong> وليس تخمين</li>
+                        <li><strong>كل نظام له خصوصيته</strong>؛ لا يوجد حل واحد يناسب الجميع</li>
+                        <li><strong>القياس قبل وبعد التحسين</strong> ضروري لتقييم الفعالية</li>
+                    </ol>
+                </div>
+
+                <div class="card info" style="text-align: center;">
+                    <h3><i class="fas fa-quote-left"></i> الشعار الذهبي:</h3>
+                    <p style="font-size: 1.4rem; margin: 20px 0; color: #f39c12;">
+                        "لا يمكنك تحسين ما لا تستطيع قياسه"
+                    </p>
+                    <p style="color: #bbb; margin-bottom: 20px;">- بيتر دراكر</p>
+
+                    <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 20px;">
+                        <div>
+                            <i class="fas fa-ruler" style="font-size: 2rem; color: #3498db;"></i>
+                            <p>القياس</p>
+                        </div>
+                        <i class="fas fa-arrow-right" style="color: #bbb;"></i>
+                        <div>
+                            <i class="fas fa-search" style="font-size: 2rem; color: #2ecc71;"></i>
+                            <p>التحليل</p>
+                        </div>
+                        <i class="fas fa-arrow-right" style="color: #bbb;"></i>
+                        <div>
+                            <i class="fas fa-wrench" style="font-size: 2rem; color: #f39c12;"></i>
+                            <p>التحسين</p>
+                        </div>
+                        <i class="fas fa-arrow-right" style="color: #bbb;"></i>
+                        <div>
+                            <i class="fas fa-redo" style="font-size: 2rem; color: #e74c3c;"></i>
+                            <p>التكرار</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid">
+                    <div class="card">
+                        <h4><i class="fas fa-graduation-cap"></i> للطلاب:</h4>
+                        <ul>
+                            <li>تدرب على الأدوات الأساسية أولاً</li>
+                            <li>أنشئ نظام تجريبي للتمرين</li>
+                            <li>تابع التطورات في مجال أداء الأنظمة</li>
+                            <li>شارك معرفتك مع الزملاء</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <h4><i class="fas fa-briefcase"></i> للمهنيين:</h4>
+                        <ul>
+                            <li>أنشئ نظام مراقبة دائم</li>
+                            <li>وثق التغييرات والإعدادات</li>
+                            <li>خطط للقدرة والتوسع المستقبلي</li>
+                            <li>شارك في مجتمعات المحترفين</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card"
+                    style="text-align: center; background: linear-gradient(135deg, rgba(52, 152, 219, 0.2), rgba(155, 89, 182, 0.2));">
+                    <h3><i class="fas fa-handshake"></i> شكر وتقدير</h3>
+                    <p style="font-size: 1.2rem; margin: 20px 0;">
+                        <strong>شكراً لكم على حسن الاستماع</strong>
+                    </p>
+                    <p style="color: #bbb; margin-bottom: 10px;">
+                        فهم أداء النظام هو ما يفصل بين المبرمج الجيد والمهندس المتميز
+                    </p>
+                    <div style="margin-top: 20px;">
+                        <span class="badge">إعداد: [اسم الطالب]</span>
+                        <span class="badge success">مقرر: أنظمة التشغيل</span>
+                        <span class="badge info" id="current-date-footer"></span>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 30px; color: #7f8c8d; font-size: 0.9rem;">
+                    <p><i class="fas fa-code"></i> تم تطوير هذا العرض باستخدام HTML, CSS, JavaScript</p>
+                    <p>جميع الأوامر والأمثلة قابلة للتطبيق على أنظمة Linux الحديثة</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- أزرار التحكم -->
+        <div class="controls">
+            <button onclick="prevSlide()" id="prev-btn">
+                <i class="fas fa-arrow-right"></i> الشريحة السابقة
+            </button>
+
+            <button onclick="nextSlide()" id="next-btn">
+                الشريحة التالية <i class="fas fa-arrow-left"></i>
+            </button>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px; color: #7f8c8d;">
+            <p><i class="fas fa-keyboard"></i> استخدم مفاتيح الأسهم للتنقل | <i class="fas fa-mouse-pointer"></i> انقر
+                على الأزرار للتفاعل</p>
+        </div>
+    </div>
+
+    <script>
+        // حالة التطبيق
+        let currentSlide = 0;
+        const totalSlides = 11;
+        let thinkingTimer = 120;
+        let timerInterval;
+
+        // عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', function () {
+            // تعيين التاريخ الحالي
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('ar-SA', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            document.getElementById('current-date').textContent = dateStr;
+            document.getElementById('current-date-footer').textContent = dateStr;
+
+            // محاكاة التحميل
+            let progress = 0;
+            const progressBar = document.getElementById('load-progress');
+            const loadInterval = setInterval(() => {
+                progress += 5;
+                progressBar.style.width = progress + '%';
+
+                if (progress >= 100) {
+                    clearInterval(loadInterval);
+                    setTimeout(() => {
+                        document.getElementById('loading').style.opacity = '0';
+                        setTimeout(() => {
+                            document.getElementById('loading').style.display = 'none';
+                            document.getElementById('main-screen').classList.add('active');
+                            updateProgress();
+                            startThinkingTimer();
+                        }, 500);
+                    }, 300);
+                }
+            }, 100);
+
+            // تحديث عدد الشرائح
+            document.getElementById('total-slides').textContent = totalSlides;
+
+            // إعداد مفاتيح الأسهم
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'ArrowRight' || e.key === 'Right') prevSlide();
+                if (e.key === 'ArrowLeft' || e.key === 'Left') nextSlide();
+                if (e.key === 'Home') goToSlide(0);
+                if (e.key === 'End') goToSlide(totalSlides - 1);
+                if (e.key >= '1' && e.key <= '9') {
+                    const slideNum = parseInt(e.key) - 1;
+                    if (slideNum < totalSlides) goToSlide(slideNum);
+                }
+            });
+        });
+
+        // الانتقال للشريحة التالية
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                document.querySelector('.slide.active').classList.remove('active');
+                currentSlide++;
+                document.getElementById('slide' + (currentSlide + 1)).classList.add('active');
+                updateProgress();
+
+                // إذا كانت الشريحة 10 (الأسئلة) أعد تشغيل المؤقت
+                if (currentSlide === 9) {
+                    startThinkingTimer();
+                }
+            }
+        }
+
+        // الانتقال للشريحة السابقة
+        function prevSlide() {
+            if (currentSlide > 0) {
+                document.querySelector('.slide.active').classList.remove('active');
+                currentSlide--;
+                document.getElementById('slide' + (currentSlide + 1)).classList.add('active');
+                updateProgress();
+            }
+        }
+
+        // تحديث شريط التقدم
+        function updateProgress() {
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            document.getElementById('slide-progress').style.width = progress + '%';
+            document.getElementById('current-slide').textContent = currentSlide + 1;
+
+            // تحديث أزرار التنقل
+            document.getElementById('prev-btn').disabled = currentSlide === 0;
+            document.getElementById('next-btn').innerHTML = currentSlide === totalSlides - 1
+                ? 'النهاية <i class="fas fa-flag-checkered"></i>'
+                : 'الشريحة التالية <i class="fas fa-arrow-left"></i>';
+        }
+
+        // مؤقت التفكير
+        function startThinkingTimer() {
+            clearInterval(timerInterval);
+            thinkingTimer = 120;
+            document.getElementById('timer-count').textContent = thinkingTimer;
+
+            timerInterval = setInterval(() => {
+                thinkingTimer--;
+                document.getElementById('timer-count').textContent = thinkingTimer;
+
+                if (thinkingTimer <= 0) {
+                    clearInterval(timerInterval);
+                    // إظهار جميع الإجابات تلقائياً
+                    showAnswer('answer1');
+                    showAnswer('answer2');
+                    showAnswer('answer3');
+                }
+            }, 1000);
+        }
+
+        // عرض الإجابة
+        function showAnswer(answerId) {
+            const answerBox = document.getElementById(answerId);
+            if (answerBox) {
+                answerBox.classList.add('show');
+                // تمرير إلى الإجابة إذا كانت مخفية جزئياً
+                answerBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        // الانتقال لشريحة معينة
+        function goToSlide(slideNum) {
+            if (slideNum >= 0 && slideNum < totalSlides) {
+                document.querySelector('.slide.active').classList.remove('active');
+                currentSlide = slideNum;
+                document.getElementById('slide' + (currentSlide + 1)).classList.add('active');
+                updateProgress();
+            }
+        }
+
+        // حفظ التقدم في localStorage
+        function saveProgress() {
+            localStorage.setItem('osManagementPresentation', JSON.stringify({
+                slide: currentSlide,
+                timestamp: new Date().getTime()
+            }));
+        }
+
+        // تحميل التقدم السابق
+        function loadProgress() {
+            try {
+                const saved = JSON.parse(localStorage.getItem('osManagementPresentation'));
+                if (saved && saved.slide !== undefined) {
+                    // تحقق إذا كان أقل من 24 ساعة
+                    const now = new Date().getTime();
+                    if (now - saved.timestamp < 24 * 60 * 60 * 1000) {
+                        goToSlide(saved.slide);
+                    }
+                }
+            } catch (e) {
+                console.log('لا توجد بيانات محفوظة');
+            }
+        }
+
+        // عند الخروج
+        window.addEventListener('beforeunload', saveProgress);
+
+        // تحميل التقدم عند البدء
+        setTimeout(loadProgress, 100);
+    </script>
+</body>
+
+</html>
